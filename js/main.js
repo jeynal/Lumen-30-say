@@ -241,7 +241,8 @@ function openMasterChat() {
   }
 }
 
-function processMasterQueue() {
+
+  function processMasterQueue() {
   if (masterQueue.length === 0) return;
   const item = masterQueue.shift();
   const stream = document.getElementById('master-stream');
@@ -274,6 +275,9 @@ function processMasterQueue() {
   } else if (item.type === 'card') {
     renderProfileCardInChat('player', 'master-stream');
     setTimeout(processMasterQueue, 1000);
+  } else if (item.type === 'master_confirm_card') {
+    // จุดที่เพิ่มใหม่: เรียกปุ่มให้เลือก คอนเฟิร์ม หรือ อยากแก้ข้อมูลใหม่
+    showMasterCardConfirmation();
   } else if (item.type === 'master_event') {
     if (item.eventName === 'OPEN_GROUP_CHANNEL') {
       const msg = document.getElementById('master-last-msg');
@@ -290,6 +294,7 @@ function processMasterQueue() {
     }
   }
 }
+
 
 function skipMasterAvatarUpload() {
   const box = document.getElementById('master-form-box');
@@ -1215,4 +1220,98 @@ function openSwitchAccountModal() {
   if (input) input.value = '';
   const modal = document.getElementById('modal-email-login');
   if (modal) modal.classList.remove('hidden');
+}
+
+// ฟังก์ชันแสดงปุ่มเลือก: คอนเฟิร์ม vs อยากแก้ข้อมูลใหม่
+function showMasterCardConfirmation() {
+  const box = document.getElementById('master-form-box');
+  if (!box) return;
+
+  box.innerHTML = `
+    <div class="space-y-2 p-2 bg-purple-50/80 rounded-2xl border border-purple-100">
+      <p class="text-[11px] font-bold text-purple-900 text-center">Is your profile card accurate?</p>
+      <div class="grid grid-cols-1 gap-1.5">
+        <button id="btn-confirm-card" class="w-full bg-gradient-to-r from-fuchsia-400 to-pink-400 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm hover:opacity-95 active:scale-95 transition">
+          ✨ Confirm & Continue
+        </button>
+        <button id="btn-edit-card" class="w-full bg-white border border-purple-200 text-purple-800 font-semibold py-2 rounded-xl text-xs hover:bg-purple-100/50 active:scale-95 transition">
+          ✏️ ฉันคิดว่าอยากแก้ข้อมูลใหม่
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('btn-confirm-card').onclick = () => {
+    box.innerHTML = '';
+    addUserBubble(document.getElementById('master-stream'), 'Looks perfect to me!');
+    processMasterQueue(); // ทำงานต่อในคิวเดิม (ฟังบทเรียนกฎวันแรก)
+  };
+
+  document.getElementById('btn-edit-card').onclick = () => {
+    box.innerHTML = '';
+    addUserBubble(document.getElementById('master-stream'), 'ฉันคิดว่าอยากแก้ข้อมูลใหม่');
+    
+    setTimeout(() => {
+      addMasterMsg('No problem! Let\'s update your details step by step.');
+      startMasterEditFlow(0); // เริ่มลูปแก้ไขทีละข้อพร้อมใส่ค่าเดิมรอไว้
+    }, 600);
+  };
+}
+
+// ฟังก์ชันวนลูปให้แก้ไขข้อมูลทีละข้อ โดยใส่ค่าเดิมรอไว้ในช่อง Input
+function startMasterEditFlow(idx) {
+  if (idx >= regQuestions.length) {
+    const box = document.getElementById('master-form-box');
+    if (box) box.innerHTML = '';
+    
+    addMasterMsg('Here is your updated Profile Card!');
+    renderProfileCardInChat('player', 'master-stream'); // โชว์การ์ดใบใหม่ที่อัปเดตแล้ว
+    
+    setTimeout(() => {
+      addMasterMsg('How about now? Does it look perfect?');
+      showMasterCardConfirmation(); // ถามซ้ำถ้ายังอยากแก้ซ้ำอีก
+    }, 800);
+    return;
+  }
+
+  const q = regQuestions[idx];
+  const currentValue = playerProfile[q.key] || '';
+  
+  addMasterMsg(`[Update ${idx+1}/6] ${q.label}`);
+  renderMasterInputBarWithDefault(q.placeholder, currentValue, (newValue) => {
+    playerProfile[q.key] = newValue;
+    updateUIFromState();
+    addUserBubble(document.getElementById('master-stream'), newValue);
+    startMasterEditFlow(idx + 1);
+  });
+}
+
+// ฟังก์ชันสร้างช่อง Input ที่ดึงค่าเดิมใส่ไว้รอแก้
+function renderMasterInputBarWithDefault(placeholder, defaultValue, cb) {
+  const box = document.getElementById('master-form-box');
+  if (!box) return;
+
+  box.innerHTML = `
+    <div class="flex gap-2">
+      <input type="text" id="master-input-field" class="flex-1 bg-purple-50/50 border border-purple-200 rounded-xl px-3.5 py-2 text-xs text-purple-950 focus:outline-none focus:border-fuchsia-400" placeholder="${placeholder}" value="${defaultValue}">
+      <button id="master-send-btn" class="bg-gradient-to-r from-fuchsia-400 to-pink-400 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm active:scale-95 transition">Save</button>
+    </div>
+  `;
+
+  const field = document.getElementById('master-input-field');
+  const btn = document.getElementById('master-send-btn');
+  
+  if (field) {
+    field.focus();
+    field.select(); // Hilight ข้อความเดิมเพื่อให้พิมพ์ทับหรือแก้ไขได้ทันที
+  }
+
+  if (btn) {
+    btn.onclick = () => {
+      const val = field.value.trim();
+      if (!val) return;
+      box.innerHTML = '';
+      cb(val);
+    };
+  }
 }
