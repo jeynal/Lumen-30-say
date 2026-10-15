@@ -616,9 +616,27 @@ function openMasterChat() {
     showEnterGroupButton();
   } else if (!masterRunning) {
     masterRunning = true;
-    resumeMaster();
+    ensureDayData(1, resumeMaster, () => {
+      masterRunning = false;
+      showFatalInRoom('master-stream', 'Cannot load js/stories/day1.js — check the file path/name and the browser Console (F12).');
+    });
   }
 }
+
+// แสดงข้อผิดพลาดบนหน้าจอ (ไม่บันทึกลง log)
+function showFatalInRoom(streamId, text) {
+  const s = $(streamId);
+  if (!s) return;
+  const d = document.createElement('div');
+  d.className = 'flex justify-center my-2';
+  d.innerHTML = `<div class="bg-red-50 text-red-600 border border-red-200 px-3.5 py-2 rounded-xl text-[11px] max-w-[90%] text-center">⚠️ ${esc(text)}</div>`;
+  s.appendChild(d);
+}
+
+window.addEventListener('error', (ev) => {
+  const room = activeRoomId ? STREAM_ID[activeRoomId] : null;
+  if (room) showFatalInRoom(room, `Script error: ${ev.message}`);
+});
 
 function resumeMaster() {
   const sub = progress.master.sub;
