@@ -4,8 +4,8 @@ window.day1Data = {
   
   // 1. บทสนทนาในห้อง Master (ต้อนรับ ถามความรู้สึก ยืนยันโปรไฟล์ สรุปการ์ด และบอกกฎ)
   masterDialogues: [
-    { type: 'sys', text: '✨ LUMEN Shanghai Season 1 Official Channel' },
-    { type: 'master_msg', text: 'Congratulations and welcome, Participant #8! 🎉 We are thrilled to have you here in Shanghai.' },
+    { type: 'sys', text: 'The chat room is opening now' },
+    { type: 'master_msg', text: 'Congratulations and welcome, Participant #8! 🎉 We are thrilled to have you here in our dating program ✨ Lumen season 1✨.' },
     { type: 'master_msg', text: 'How are you feeling right now? Excited or nervous about spending the next 30 days with us?' },
     { type: 'player_turn', prompt: 'Tell Producer how you feel...' },
 
@@ -21,7 +21,8 @@ window.day1Data = {
     { type: 'card', key: 'player' },
 
     { type: 'master_msg', text: 'Does everything look perfect to you?' },
-    { type: 'player_turn', prompt: 'Confirm your profile card...' },
+    { type: 'master_confirm_card' }, // ระบบวนลูปตรวจ/แก้ไขการ์ด
+
 
     { type: 'master_msg', text: 'Awesome! Now, please keep these key rules in mind:' },
     { type: 'master_msg', text: '📌 [RULES OF DAY 1]\n1. All participants must use anonymous Code Names.\n2. Do NOT reveal your real name or exact age on Day 1.\n3. Tomorrow (Day 2), everyone\'s true profiles & photos will be officially unveiled!' },
